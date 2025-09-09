@@ -190,29 +190,29 @@ pub fn user_adds_element(
             let (g_transform, grid) = grid_q.into_inner();
             if let Some(current_pos) = world_to_grid(world_pos, g_transform, &grid.size, grid.scale) {
                 info!("Cursor in grid: (x: {}, y: {})", current_pos.x, current_pos.y);
-/* 
+
                 let all_click_squares = if let Some(previous_m_pos) = previous_mouse_pos.0 {
-                    if previous_m_pos != current_pos {
-                        bresenham_line(
-                            previous_m_pos.x as i32,
-                            previous_m_pos.y as i32, 
-                            current_pos.x as i32, 
-                            current_pos.y as i32, 
-                        )
-                    } else { vec![current_pos] }
+                    bresenham_line(
+                        previous_m_pos.x as i32,
+                        previous_m_pos.y as i32, 
+                        current_pos.x as i32, 
+                        current_pos.y as i32, 
+                    )
                 } else { vec![current_pos] };
-*/
+
                 let image = images.get_mut(&handle.0).expect("Image not found");
 
-                let elem_kind = ElementKind::from_color(
-                    current_pos.get_color(image).unwrap()
-                ).unwrap();
+                for sq_pos in all_click_squares {
+                    let elem_kind = ElementKind::from_color(
+                        sq_pos.get_color(image).unwrap()
+                    ).unwrap();
 
-                if elem_kind == ElementKind::Empty {
-                    current_pos.set_color(image, selected_elems.kind.to_color()).unwrap();
+                    if elem_kind == ElementKind::Empty {
+                        sq_pos.set_color(image, selected_elems.kind.to_color()).unwrap();
+                    }
                 }
 
-                previous_mouse_pos.0 = Some(ElementPos::new(current_pos.x, current_pos.y));
+                previous_mouse_pos.0 = Some(current_pos);
                 return 
             }
         } 
@@ -221,6 +221,10 @@ pub fn user_adds_element(
 }
 
 fn bresenham_line(x0: i32, y0: i32, x1: i32, y1: i32) -> Vec<ElementPos> {
+    if x0 == x1 && y0 == y1 {
+        return vec![ElementPos::new(x0 as u32, y1 as u32)]
+    }
+
     let mut points = Vec::new();
 
     let dx = (x1 - x0).abs();
@@ -234,9 +238,10 @@ fn bresenham_line(x0: i32, y0: i32, x1: i32, y1: i32) -> Vec<ElementPos> {
     let mut y = y0;
 
     loop {
-        if (x, y) != (x0, y0) {
+        if !(x == x0 && y == y0) { 
             points.push(ElementPos::new(x as u32, y as u32));
         }
+
         
         if x == x1 && y == y1 {
             break;
