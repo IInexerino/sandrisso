@@ -207,7 +207,7 @@ pub fn user_adds_element(
                         sq_pos.get_color(image).unwrap()
                     ).unwrap();
 
-                    if elem_kind == ElementKind::Empty {
+                    if elem_kind == ElementKind::Empty || selected_elems.kind == ElementKind::Empty {
                         sq_pos.set_color(image, selected_elems.kind.to_color()).unwrap();
                     }
                 }
