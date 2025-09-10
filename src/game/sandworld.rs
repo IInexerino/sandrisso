@@ -20,8 +20,6 @@ impl UserSelectedElements{
     }
 }
 
-
-
 #[derive(Component)]
 pub struct Grid {
     pub size: GridSize,
@@ -97,7 +95,7 @@ pub enum ElementKind {
 // - 0.00019606 
 impl ElementKind {
     fn from_color(color: Color) -> Option<Self> {
-        if color == Color::srgba(1., 1., 1., 1.) { Some(ElementKind::Empty) }
+        if color == Color::srgba(0., 0., 0., 0.) { Some(ElementKind::Empty) }
         else if color == Color::srgba(0.85882354, 0.70980394, 0.45882353, 1.0) { Some(ElementKind::Sand) }
         else if color == Color::srgba(0.5176471,0.5176471,0.5176471, 1.) { Some(ElementKind::Stone) }
         else { None }
@@ -105,7 +103,7 @@ impl ElementKind {
     }
     fn to_color(&self) -> Color {
         match self {
-            ElementKind::Empty => Color::srgba(1., 1., 1., 1.),
+            ElementKind::Empty => Color::srgba(0., 0., 0., 0.),
             ElementKind::Sand => Color::srgba(0.86, 0.71, 0.46, 1.0),
             ElementKind::Stone => Color::srgba(0.52,0.52,0.52, 1.),
         }
@@ -143,8 +141,8 @@ pub fn empty_grid_image_setup(
             depth_or_array_layers: 1,
         },
         TextureDimension::D2,
-        // Initialize it with a black color
-        &(css::WHITE.to_u8_array()),
+        // Initialize it with a transparent black color
+        &(Color::srgba(0., 0., 0., 0.).to_srgba().to_u8_array()),
         // Use the same encoding as the color we set
         TextureFormat::Rgba8UnormSrgb,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
