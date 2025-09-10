@@ -1,9 +1,9 @@
 use std::fmt::Display;
 use bevy::{asset::{Assets, Handle, RenderAssetUsages}, color::{ Color, ColorToPacked}, ecs::{component::Component, query::With, resource::Resource, system::{Commands, Local, Res, ResMut, Single}}, image::{Image, TextureAccessError}, input::{mouse::MouseButton, ButtonInput}, log::info, math::{Vec2, Vec3}, render::{camera::Camera, render_resource::{Extent3d, TextureDimension, TextureFormat}}, sprite::Sprite, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window}};
 
-const GRID_SCALE: f32 = 12.;
-const GRID_WIDTH: u32 = 64;
-const GRID_HEIGHT: u32 = 64;
+const GRID_SCALE: f32 = 5.;
+const GRID_WIDTH: u32 = 256;
+const GRID_HEIGHT: u32 = 192;
 const EMPTY_COLOR: Color = Color::srgba(0., 0., 0., 0.);
 
 
