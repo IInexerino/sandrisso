@@ -1,5 +1,5 @@
 use bevy::{app::{FixedUpdate, Plugin, Startup, Update}, core_pipeline::core_2d::Camera2d, ecs::{entity::Entity, query::With, schedule::{IntoScheduleConfigs, SystemSet}, system::{Commands, Res, ResMut, Single}}, input::{keyboard::KeyCode, ButtonInput}, log::info, render::camera::{OrthographicProjection, Projection}, state::{condition::in_state, state::{NextState, OnEnter, OnExit}}, ui::UiScale};
-use crate::{game::sandworld::{empty_grid_image_setup, main_checking_loop, user_adds_element, ElementKind, GridParams, UserSelectedElements}, utils::helper_utils::toggle_resolution, AppState};
+use crate::{game::sandworld::{draw_image, empty_grid_image_setup, main_checking_loop, user_adds_element, ElementKind, GridParams, UserSelectedElements}, utils::helper_utils::toggle_resolution, AppState};
 
 pub struct GamePlugin;
 impl Plugin for GamePlugin {
@@ -19,6 +19,7 @@ impl Plugin for GamePlugin {
         .configure_sets(FixedUpdate, 
             (
                 ElementSystem::MainCheckingLoop,
+                ElementSystem::DrawOnImage,
                 ElementSystem::UserElementGeneration,
             )
                 .run_if(in_state(AppState::InGame))
@@ -27,6 +28,7 @@ impl Plugin for GamePlugin {
         .add_systems(FixedUpdate, 
             (
                 main_checking_loop.in_set(ElementSystem::MainCheckingLoop),
+                draw_image.in_set(ElementSystem::DrawOnImage),
                 (
                     user_selects_element, 
                     user_adds_element
@@ -47,6 +49,7 @@ impl Plugin for GamePlugin {
 pub enum ElementSystem {
     UserElementGeneration,
     MainCheckingLoop,
+    DrawOnImage
 }
 
 fn spawn_camera(

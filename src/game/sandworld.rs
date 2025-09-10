@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use bevy::{asset::{Assets, Handle, RenderAssetUsages}, color::{ Color, ColorToPacked}, ecs::{component::Component, query::With, resource::Resource, system::{Commands, Local, Res, ResMut, Single}}, image::{Image, TextureAccessError}, input::{mouse::MouseButton, ButtonInput}, log::info, math::{Vec2, Vec3}, render::{camera::Camera, render_resource::{Extent3d, TextureDimension, TextureFormat}}, sprite::Sprite, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window}};
+use bevy::{asset::{Assets, Handle, RenderAssetUsages}, color::{ Color, ColorToPacked}, ecs::{component::Component, query::With, resource::Resource, system::{Commands, Local, Res, ResMut, Single}}, image::Image, input::{mouse::MouseButton, ButtonInput}, log::info, math::{Vec2, Vec3}, render::{camera::Camera, render_resource::{Extent3d, TextureDimension, TextureFormat}}, sprite::Sprite, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window}};
 
 const GRID_SCALE: f32 = 5.;
 const GRID_SIZE: GridSize = GridSize::new(256, 192);
@@ -68,12 +68,6 @@ impl ElemPos {
     pub fn new(x: u32, y: u32) -> Self {
         ElemPos{ x, y }
     }
-    pub fn get_color(&self, image: &mut Image) -> Result<Color, TextureAccessError> {
-        image.get_color_at(self.x, self.y)
-    }
-    pub fn set_color(&self, image: &mut Image, color: Color) -> Result<(), TextureAccessError> {
-        image.set_color_at(self.x, self.y, color)
-    }
     pub fn in_bounds(&self) -> bool {
         if self.y < GRID_SIZE.height 
         && self.x < GRID_SIZE.width { true } else { false }
@@ -121,17 +115,7 @@ pub enum ElementKind {
     Stone,
     Sand,
 }
-// 0.85882354, 0.70980394, 0.45882353
-// - 0.00117646
-// - 0.00019606 
 impl ElementKind {
-    fn from_color(color: Color) -> Option<Self> {
-        if color == EMPTY_COLOR { Some(ElementKind::Empty) }
-        else if color == Color::srgba(0.85882354, 0.70980394, 0.45882353, 1.0) { Some(ElementKind::Sand) }
-        else if color == Color::srgba(0.5176471,0.5176471,0.5176471, 1.) { Some(ElementKind::Stone) }
-        else { None }
-        
-    }
     fn to_color(&self) -> Color {
         match self {
             ElementKind::Empty => EMPTY_COLOR,
@@ -200,19 +184,17 @@ impl Default for PrevMousePos {
 pub fn user_adds_element(
     window: Single<&Window, With<PrimaryWindow>>,
     camera: Single<(&Camera, &GlobalTransform)>,
-    grid_q: Single<(&GlobalTransform, &GridParams)>,
+    grid_q: Single<(&GlobalTransform, &GridParams, &mut GridCells)>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     selected_elems: Res<UserSelectedElements>,
-    handle: Res<GridImage>,
-    mut images: ResMut<Assets<Image>>,
     mut previous_mouse_pos: Local<PrevMousePos>,
 ) {
     if mouse_buttons.pressed(MouseButton::Left) 
     || mouse_buttons.just_pressed(MouseButton::Left) {
 
         if let Some(world_pos) = cursor_to_world(window, camera) {
-            let (g_transform, grid) = grid_q.into_inner();
-            if let Some(current_pos) = world_to_grid(world_pos, g_transform, grid.scale) {
+            let (g_transform, grid_params, mut grid_cells) = grid_q.into_inner();
+            if let Some(current_pos) = world_to_grid(world_pos, g_transform, grid_params.scale) {
 
                 let all_click_squares = if let Some(previous_m_pos) = previous_mouse_pos.0 {
                     bresenham_line(
@@ -223,15 +205,11 @@ pub fn user_adds_element(
                     )
                 } else { vec![current_pos] };
 
-                let image = images.get_mut(&handle.0).expect("Image not found");
-
                 for sq_pos in all_click_squares {
-                    let elem_kind = ElementKind::from_color(
-                        sq_pos.get_color(image).unwrap()
-                    ).unwrap();
 
-                    if elem_kind == ElementKind::Empty || selected_elems.kind == ElementKind::Empty {
-                        sq_pos.set_color(image, selected_elems.kind.to_color()).unwrap();
+                    if grid_cells.get_elem_at(sq_pos).unwrap() == ElementKind::Empty 
+                    || selected_elems.kind == ElementKind::Empty {
+                        grid_cells.set_elem_at(sq_pos, selected_elems.kind);
                     }
                 }
 
@@ -329,22 +307,21 @@ fn world_to_grid(
 }
 
 pub fn main_checking_loop(
-    handle: Res<GridImage>,
-    mut images: ResMut<Assets<Image>>,
+    mut grid_cells: Single<&mut GridCells>,
     mut dir: Local<bool>
 ) {
-    let image = images.get_mut(&handle.0).expect("Image not found");
+
+    let grid_cells = grid_cells.as_mut();
 
     for x in 0..GRID_SIZE.width {
         for y in (0..GRID_SIZE.height).rev() {
             let pos = ElemPos::new(x, y);
-            let color = image.get_color_at(pos.x, pos.y).unwrap();
-            let kind = ElementKind::from_color( color ).unwrap();
+            let kind = grid_cells.get_elem_at(pos).unwrap();
 
             match kind {
                 ElementKind::Empty | ElementKind::Stone => continue,
                 ElementKind::Sand => {
-                    sand_algorithm(image, pos, color, *dir);
+                    sand_algorithm(grid_cells, pos, *dir);
                 },
             }
         }
@@ -353,56 +330,77 @@ pub fn main_checking_loop(
 }
 
 fn sand_algorithm(
-    image: &mut Image,
+    grid_cells: &mut GridCells,
     pos: ElemPos,
-    color: Color,
     dir: bool
 ) {
     if pos.in_border_bottom() {
-        let permb_colors = vec![ElementKind::Empty.to_color()];
+        let sand = ElementKind::Sand;
+        let permb_elems = vec![ElementKind::Empty];
 
-        if unchecked_set_color_down(image, pos, color, &permb_colors) {}
+        if unchecked_set_color_down(grid_cells, pos, sand, &permb_elems) {}
         else if dir {
-            if set_color_leftdown(image, pos, color, &permb_colors) {}
-            else if set_color_rightdown(image, pos, color, &permb_colors) {}
+            if set_color_leftdown(grid_cells, pos, sand, &permb_elems) {}
+            else if set_color_rightdown(grid_cells, pos, sand, &permb_elems) {}
         } else {
-            if set_color_rightdown(image, pos, color, &permb_colors) {}
-            else if set_color_leftdown(image, pos, color, &permb_colors) {}
+            if set_color_rightdown(grid_cells, pos, sand, &permb_elems) {}
+            else if set_color_leftdown(grid_cells, pos, sand, &permb_elems) {}
         }
     }
 }
 
 
-fn unchecked_set_color_down(image: &mut Image, pos: ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
-    let c = image.get_color_at(pos.x, pos.y + 1).unwrap();
-    if permb_colors.contains(&c) {
-        image.set_color_at(pos.x, pos.y, c).unwrap();
-        image.set_color_at(pos.x, pos.y + 1 , color).unwrap();
+fn unchecked_set_color_down(grid_cells: &mut GridCells, pos: ElemPos, kind: ElementKind, permb_elems: &Vec<ElementKind>) -> bool {
+    let down_pos = ElemPos::new(pos.x, pos.y + 1);
+    let check_kind = grid_cells.get_elem_at(down_pos).unwrap();
+    if permb_elems.contains(&check_kind) {
+        grid_cells.set_elem_at(pos, check_kind).unwrap();
+        grid_cells.set_elem_at(down_pos, kind).unwrap();
         return true
     }
     return false
 }
 
-fn set_color_leftdown(image: &mut Image, pos: ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
+fn set_color_leftdown(grid_cells: &mut GridCells, pos: ElemPos, kind: ElementKind, permb_elems: &Vec<ElementKind>) -> bool {
     if pos.in_border_left() {
-        let c = image.get_color_at(pos.x - 1, pos.y + 1).unwrap();
-        if permb_colors.contains(&c) {
-            image.set_color_at(pos.x, pos.y, c).unwrap();
-            image.set_color_at(pos.x - 1, pos.y + 1 , color).unwrap();
+        let leftdown_pos = ElemPos::new(pos.x - 1, pos.y + 1);
+        let check_kind = grid_cells.get_elem_at(leftdown_pos).unwrap();
+        if permb_elems.contains(&check_kind) {
+            grid_cells.set_elem_at(pos, check_kind).unwrap();
+            grid_cells.set_elem_at(leftdown_pos, kind).unwrap();
             return true
         }
     }
     return false
 }
 
-fn set_color_rightdown(image: &mut Image, pos: ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
+fn set_color_rightdown(grid_cells: &mut GridCells, pos: ElemPos, kind: ElementKind, permb_elems: &Vec<ElementKind>) -> bool {
     if pos.in_border_right() {
-        let c = image.get_color_at(pos.x + 1, pos.y + 1).unwrap();
-        if permb_colors.contains(&c) {
-            image.set_color_at(pos.x, pos.y, c).unwrap();
-            image.set_color_at(pos.x + 1, pos.y + 1 , color).unwrap();
+        let rightdown_pos = ElemPos::new(pos.x + 1, pos.y + 1);
+        let check_kind = grid_cells.get_elem_at(rightdown_pos).unwrap();
+        if permb_elems.contains(&check_kind) {
+            grid_cells.set_elem_at(pos, check_kind).unwrap();
+            grid_cells.set_elem_at(rightdown_pos, kind).unwrap();
             return true
         }
     }
     return false
+}
+
+pub fn draw_image(
+    grid_cells: Single<&GridCells>,
+    handle: Res<GridImage>,
+    mut images: ResMut<Assets<Image>>,
+) {
+    let image = images.get_mut(&handle.0).expect("Image not found");
+
+    for x in 0..GRID_SIZE.width {
+        for y in 0..GRID_SIZE.height {
+            let elem_color = grid_cells
+                .get_elem_at(ElemPos::new(x, y))
+                .unwrap()
+                .to_color();
+            image.set_color_at(x, y, elem_color).unwrap();
+        }
+    }
 }
