@@ -32,14 +32,14 @@ impl GridCells {
     pub fn new_empty() -> Self {
         GridCells { cells: [ ElementKind::Empty ; GRID_SIZE.count() ] }
     }
-    pub fn get_elem_at(&self, pos: &ElemPos) -> Option<ElementKind> {
+    pub fn get_elem_at(&self, pos: ElemPos) -> Option<ElementKind> {
         if pos.in_bounds() {
             Some( self.cells[(pos.y * GRID_SIZE.width + pos.x) as usize] )
         } else { None }
     }
-    pub fn set_elem_at(&mut self, pos: &ElemPos, kind: &ElementKind) -> Option<()> {
+    pub fn set_elem_at(&mut self, pos: ElemPos, kind: ElementKind) -> Option<()> {
         if pos.in_bounds() {
-            self.cells[(pos.y * GRID_SIZE.width + pos.x) as usize] = *kind; 
+            self.cells[(pos.y * GRID_SIZE.width + pos.x) as usize] = kind; 
 
             Some(())
         } else { None }
@@ -344,7 +344,7 @@ pub fn main_checking_loop(
             match kind {
                 ElementKind::Empty | ElementKind::Stone => continue,
                 ElementKind::Sand => {
-                    sand_algorithm(image, &pos, color, *dir);
+                    sand_algorithm(image, pos, color, *dir);
                 },
             }
         }
@@ -354,7 +354,7 @@ pub fn main_checking_loop(
 
 fn sand_algorithm(
     image: &mut Image,
-    pos: &ElemPos,
+    pos: ElemPos,
     color: Color,
     dir: bool
 ) {
@@ -373,7 +373,7 @@ fn sand_algorithm(
 }
 
 
-fn unchecked_set_color_down(image: &mut Image, pos: &ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
+fn unchecked_set_color_down(image: &mut Image, pos: ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
     let c = image.get_color_at(pos.x, pos.y + 1).unwrap();
     if permb_colors.contains(&c) {
         image.set_color_at(pos.x, pos.y, c).unwrap();
@@ -383,7 +383,7 @@ fn unchecked_set_color_down(image: &mut Image, pos: &ElemPos, color: Color, perm
     return false
 }
 
-fn set_color_leftdown(image: &mut Image, pos: &ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
+fn set_color_leftdown(image: &mut Image, pos: ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
     if pos.in_border_left() {
         let c = image.get_color_at(pos.x - 1, pos.y + 1).unwrap();
         if permb_colors.contains(&c) {
@@ -395,7 +395,7 @@ fn set_color_leftdown(image: &mut Image, pos: &ElemPos, color: Color, permb_colo
     return false
 }
 
-fn set_color_rightdown(image: &mut Image, pos: &ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
+fn set_color_rightdown(image: &mut Image, pos: ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
     if pos.in_border_right() {
         let c = image.get_color_at(pos.x + 1, pos.y + 1).unwrap();
         if permb_colors.contains(&c) {
