@@ -132,12 +132,14 @@ impl ElemKind {
                 pos.x.hash(&mut hasher);
                 pos.y.hash(&mut hasher);
                 let hash = hasher.finish();
+                    
+                let r_variation = ((hash >> 0) % 32) as f32 / 32.0;
+                let g_variation = ((hash >> 8) % 32) as f32 / 32.0;
+                let b_variation = ((hash >> 16) % 32) as f32 / 32.0;
                 
-                let variation = (hash % 64) as f32 / 64.0;
-                
-                let r = (0.86f32 + variation * 0.08 - 0.04).clamp(0.0, 1.0);
-                let g = (0.71f32 + variation * 0.06 - 0.03).clamp(0.0, 1.0);
-                let b = (0.46f32 + variation * 0.04 - 0.02).clamp(0.0, 1.0);
+                let r = (0.86f32 + r_variation * 0.20 - 0.10).clamp(0.6, 1.0);
+                let g = (0.71f32 + g_variation * 0.25 - 0.125).clamp(0.5, 0.9);
+                let b = (0.46f32 + b_variation * 0.30 - 0.15).clamp(0.3, 0.7);
                 
                 Color::linear_rgb(r, g, b)
             }
