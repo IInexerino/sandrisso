@@ -1,12 +1,12 @@
 use bevy::{app::{FixedUpdate, Plugin, Startup, Update}, core_pipeline::core_2d::Camera2d, ecs::{entity::Entity, query::With, schedule::{IntoScheduleConfigs, SystemSet}, system::{Commands, Res, ResMut, Single}}, input::{keyboard::KeyCode, ButtonInput}, log::info, render::camera::{OrthographicProjection, Projection}, state::{condition::in_state, state::{NextState, OnEnter, OnExit}}, ui::UiScale};
-use crate::{game::sandworld::{draw_image, empty_grid_image_setup, main_checking_loop, user_adds_element, ElementKind, GridParams, UserSelectedElements}, utils::helper_utils::toggle_resolution, AppState};
+use crate::{game::sandworld::{draw_image, empty_grid_image_setup, main_checking_loop, user_adds_element, ElemKind, GridParams, UserSelectedElements}, utils::helper_utils::toggle_resolution, AppState};
 
 pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut bevy::app::App) {
 
         app
-        .insert_resource(UserSelectedElements::single(ElementKind::Sand))
+        .insert_resource(UserSelectedElements::single(ElemKind::Sand))
         .add_systems(Startup, spawn_camera)
         .add_systems(Update, toggle_resolution)
 
@@ -75,9 +75,9 @@ fn user_selects_element(
 ) {
     let toggled_elem_kind = if keys.just_pressed(KeyCode::KeyM) {
         match element_selection.kind {
-            ElementKind::Empty => Some(ElementKind::Sand),
-            ElementKind::Sand => Some(ElementKind::Stone),
-            ElementKind::Stone => Some(ElementKind::Empty),
+            ElemKind::Empty => Some(ElemKind::Sand),
+            ElemKind::Sand => Some(ElemKind::Stone),
+            ElemKind::Stone => Some(ElemKind::Empty),
         }
     } else { None };
 
