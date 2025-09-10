@@ -28,6 +28,23 @@ pub struct GridParams {
 pub struct GridCells {
     pub cells: [ElementKind; GRID_SIZE.count()]
 }
+impl GridCells {
+    pub fn new_empty() -> Self {
+        GridCells { cells: [ ElementKind::Empty ; GRID_SIZE.count() ] }
+    }
+    pub fn get_elem_at(&self, pos: &ElemPos) -> Option<ElementKind> {
+        if pos.in_bounds() {
+            Some( self.cells[(pos.y * GRID_SIZE.width + pos.x) as usize] )
+        } else { None }
+    }
+    pub fn set_elem_at(&mut self, pos: &ElemPos, kind: &ElementKind) -> Option<()> {
+        if pos.in_bounds() {
+            self.cells[(pos.y * GRID_SIZE.width + pos.x) as usize] = *kind; 
+
+            Some(())
+        } else { None }
+    }
+}
 
 pub struct GridSize{
     width: u32,
@@ -56,6 +73,10 @@ impl ElemPos {
     }
     pub fn set_color(&self, image: &mut Image, color: Color) -> Result<(), TextureAccessError> {
         image.set_color_at(self.x, self.y, color)
+    }
+    pub fn in_bounds(&self) -> bool {
+        if self.y < GRID_SIZE.height 
+        && self.x < GRID_SIZE.width { true } else { false }
     }
     pub fn in_border_bottom(&self) -> bool {
         if self.y < GRID_SIZE.height - 1 { true }
@@ -136,10 +157,7 @@ pub fn empty_grid_image_setup(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>
 ) {
-    
-    let grid = GridParams {
-        scale: GRID_SCALE,
-    };
+    let grid = GridParams { scale: GRID_SCALE };
 
     // Create an image that we are going to draw into
     let image = Image::new_fill(
@@ -164,7 +182,8 @@ pub fn empty_grid_image_setup(
     commands.spawn((
         Sprite::from_image(handle.clone()),
         transform,
-        grid
+        grid,
+        GridCells::new_empty(),
     ));
     
     commands.insert_resource(GridImage(handle));
@@ -188,15 +207,12 @@ pub fn user_adds_element(
     mut images: ResMut<Assets<Image>>,
     mut previous_mouse_pos: Local<PrevMousePos>,
 ) {
-    
     if mouse_buttons.pressed(MouseButton::Left) 
     || mouse_buttons.just_pressed(MouseButton::Left) {
 
         if let Some(world_pos) = cursor_to_world(window, camera) {
-            info!("Cursor in window: (x: {}, y: {})", world_pos.x, world_pos.y);
             let (g_transform, grid) = grid_q.into_inner();
             if let Some(current_pos) = world_to_grid(world_pos, g_transform, grid.scale) {
-                info!("Cursor in grid: (x: {}, y: {})", current_pos.x, current_pos.y);
 
                 let all_click_squares = if let Some(previous_m_pos) = previous_mouse_pos.0 {
                     bresenham_line(
