@@ -1,5 +1,5 @@
 use bevy::{app::{FixedUpdate, Plugin, Startup, Update}, core_pipeline::core_2d::Camera2d, ecs::{entity::Entity, query::With, schedule::{IntoScheduleConfigs, SystemSet}, system::{Commands, Res, ResMut, Single}}, input::{keyboard::KeyCode, ButtonInput}, log::info, render::camera::{OrthographicProjection, Projection}, state::{condition::in_state, state::{NextState, OnEnter, OnExit}}, ui::UiScale};
-use crate::{game::sandworld::{draw_image, empty_grid_image_setup, main_checking_loop, user_adds_element, ElemKind, GridParams, UserSelectedElements}, utils::helper_utils::toggle_resolution, AppState};
+use crate::{game::sandworld::{ image_setup::empty_grid_image_setup, main_interaction::main_interaction_loop, draw_image::draw_image, user_element_interraction::{user_adds_element, user_selects_element, UserSelectedElements}, ElemKind, GridParams}, utils::helper_utils::toggle_resolution, AppState};
 
 pub struct GamePlugin;
 impl Plugin for GamePlugin {
@@ -18,7 +18,7 @@ impl Plugin for GamePlugin {
 
         .configure_sets(FixedUpdate, 
             (
-                ElementSystem::MainCheckingLoop,
+                ElementSystem::MainInteractionLoop,
                 ElementSystem::DrawOnImage,
                 ElementSystem::UserElementGeneration,
             )
@@ -27,7 +27,7 @@ impl Plugin for GamePlugin {
         )
         .add_systems(FixedUpdate, 
             (
-                main_checking_loop.in_set(ElementSystem::MainCheckingLoop),
+                main_interaction_loop.in_set(ElementSystem::MainInteractionLoop),
                 draw_image.in_set(ElementSystem::DrawOnImage),
                 (
                     user_selects_element, 
@@ -48,7 +48,7 @@ impl Plugin for GamePlugin {
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
 pub enum ElementSystem {
     UserElementGeneration,
-    MainCheckingLoop,
+    MainInteractionLoop,
     DrawOnImage
 }
 
@@ -67,32 +67,6 @@ fn spawn_camera(
         )
     ));
     uiscale.0 = uiscale.0 / 2.;
-}
-
-fn user_selects_element(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut element_selection: ResMut<UserSelectedElements>,
-) {
-    let toggled_elem_kind = if keys.just_pressed(KeyCode::KeyM) {
-        match element_selection.kind {
-            ElemKind::Empty => Some(ElemKind::Sand),
-            ElemKind::Sand => Some(ElemKind::Stone),
-            ElemKind::Stone => Some(ElemKind::Empty),
-        }
-    } else { None };
-
-    let toggled_radius = if keys.just_pressed(KeyCode::KeyN) {
-        match element_selection.radius {
-            _ => Some(1),
-        }
-    } else { None };
-
-    if let Some(kind) = toggled_elem_kind {
-        element_selection.kind = kind
-    }
-    if let Some(radius) = toggled_radius {
-        element_selection.radius = radius
-    }
 }
 
 fn back_to_main_menu(keys: Res<ButtonInput<KeyCode>>, mut app_s: ResMut<NextState<AppState>>) {
