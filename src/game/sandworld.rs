@@ -22,7 +22,6 @@ impl UserSelectedElements{
 
 #[derive(Component)]
 pub struct GridParams {
-    pub size: GridSize,
     pub scale: f32,
 }
 #[derive(Component)]
@@ -58,20 +57,20 @@ impl ElementPos {
     pub fn set_color(&self, image: &mut Image, color: Color) -> Result<(), TextureAccessError> {
         image.set_color_at(self.x, self.y, color)
     }
-    pub fn in_border_bottom(&self, grid_size: &GridSize) -> bool {
-        if self.y < grid_size.height - 1 { true }
+    pub fn in_border_bottom(&self) -> bool {
+        if self.y < GRID_SIZE.height - 1 { true }
         else { false }
     }
     pub fn in_border_left(&self) -> bool {
         if self.x > 0 { true }
         else { false }
     }
-    pub fn in_border_right(&self, grid_size: &GridSize) -> bool {
-        if self.x < grid_size.width - 1 { true }
+    pub fn in_border_right(&self) -> bool {
+        if self.x < GRID_SIZE.width - 1 { true }
         else { false }
     }
     /*
-    pub fn get_inbound_coords_within_sq_radius(&self, grid_size: &GridSize, radius: u32) -> Vec<ElementPos> {
+    pub fn get_inbound_coords_within_sq_radius(&self, radius: u32) -> Vec<ElementPos> {
         let adjustment = radius as i32 - 1;
 
         let mut neighbors = Vec::new();
@@ -80,8 +79,8 @@ impl ElementPos {
             for y in self.y as i32 -adjustment..=self.y as i32+adjustment{
                 if x < 0 
                 || y < 0
-                || x >= grid_size.width as i32
-                || y >= grid_size.height as i32
+                || x >= GRID_SIZE.width as i32
+                || y >= GRID_SIZE.height as i32
                 || (x == self.x as i32 && y == self.y as i32) {
                     continue
                 } else {
@@ -139,7 +138,6 @@ pub fn empty_grid_image_setup(
 ) {
     
     let grid = GridParams {
-        size: GRID_SIZE,
         scale: GRID_SCALE,
     };
 
@@ -147,8 +145,8 @@ pub fn empty_grid_image_setup(
     let image = Image::new_fill(
         // 2D image of size 256x256
         Extent3d {
-            width: grid.size.width,
-            height: grid.size.height,
+            width: GRID_SIZE.width,
+            height: GRID_SIZE.height,
             depth_or_array_layers: 1,
         },
         TextureDimension::D2,
@@ -197,7 +195,7 @@ pub fn user_adds_element(
         if let Some(world_pos) = cursor_to_world(window, camera) {
             info!("Cursor in window: (x: {}, y: {})", world_pos.x, world_pos.y);
             let (g_transform, grid) = grid_q.into_inner();
-            if let Some(current_pos) = world_to_grid(world_pos, g_transform, &grid.size, grid.scale) {
+            if let Some(current_pos) = world_to_grid(world_pos, g_transform, grid.scale) {
                 info!("Cursor in grid: (x: {}, y: {})", current_pos.x, current_pos.y);
 
                 let all_click_squares = if let Some(previous_m_pos) = previous_mouse_pos.0 {
@@ -291,12 +289,11 @@ fn cursor_to_world(
 fn world_to_grid(
     world_pos: Vec2,
     sprite_transform: &GlobalTransform,
-    grid_size: &GridSize,
     scale: f32,
 ) -> Option<ElementPos>{
     let sprite_center = sprite_transform.translation().truncate();
 
-    let size = Vec2::new(grid_size.width as f32 * scale , grid_size.height as f32 * scale );
+    let size = Vec2::new(GRID_SIZE.width as f32 * scale , GRID_SIZE.height as f32 * scale );
 
     let min = sprite_center - size / 2.0;
 
@@ -307,9 +304,9 @@ fn world_to_grid(
 
     if gx >= 0 
     && gy >= 0 
-    && gx < grid_size.width as isize 
-    && gy < grid_size.height as isize {
-        Some(ElementPos::new(gx as u32, grid_size.height - 1 - gy as u32 ))
+    && gx < GRID_SIZE.width as isize 
+    && gy < GRID_SIZE.height as isize {
+        Some(ElementPos::new(gx as u32, GRID_SIZE.height - 1 - gy as u32 ))
     } else {
         None
     }
@@ -318,13 +315,12 @@ fn world_to_grid(
 pub fn main_checking_loop(
     handle: Res<GridImage>,
     mut images: ResMut<Assets<Image>>,
-    grid: Single<&GridParams>,
     mut dir: Local<bool>
 ) {
     let image = images.get_mut(&handle.0).expect("Image not found");
 
-    for x in 0..grid.size.width {
-        for y in (0..grid.size.height).rev() {
+    for x in 0..GRID_SIZE.width {
+        for y in (0..GRID_SIZE.height).rev() {
             let pos = ElementPos::new(x, y);
             let color = image.get_color_at(pos.x, pos.y).unwrap();
             let kind = ElementKind::from_color( color ).unwrap();
@@ -332,7 +328,7 @@ pub fn main_checking_loop(
             match kind {
                 ElementKind::Empty | ElementKind::Stone => continue,
                 ElementKind::Sand => {
-                    sand_algorithm(image, &pos, color, &grid.size, *dir);
+                    sand_algorithm(image, &pos, color, *dir);
                 },
             }
         }
@@ -344,18 +340,17 @@ fn sand_algorithm(
     image: &mut Image,
     pos: &ElementPos,
     color: Color,
-    grid_size: &GridSize,
     dir: bool
 ) {
-    if pos.in_border_bottom(grid_size) {
+    if pos.in_border_bottom() {
         let permb_colors = vec![ElementKind::Empty.to_color()];
 
         if unchecked_set_color_down(image, pos, color, &permb_colors) {}
         else if dir {
             if set_color_leftdown(image, pos, color, &permb_colors) {}
-            else if set_color_rightdown(image, pos, color, &permb_colors, grid_size) {}
+            else if set_color_rightdown(image, pos, color, &permb_colors) {}
         } else {
-            if set_color_rightdown(image, pos, color, &permb_colors, grid_size) {}
+            if set_color_rightdown(image, pos, color, &permb_colors) {}
             else if set_color_leftdown(image, pos, color, &permb_colors) {}
         }
     }
@@ -384,8 +379,8 @@ fn set_color_leftdown(image: &mut Image, pos: &ElementPos, color: Color, permb_c
     return false
 }
 
-fn set_color_rightdown(image: &mut Image, pos: &ElementPos, color: Color, permb_colors: &Vec<Color>, grid_size: &GridSize) -> bool {
-    if pos.in_border_right(grid_size) {
+fn set_color_rightdown(image: &mut Image, pos: &ElementPos, color: Color, permb_colors: &Vec<Color>) -> bool {
+    if pos.in_border_right() {
         let c = image.get_color_at(pos.x + 1, pos.y + 1).unwrap();
         if permb_colors.contains(&c) {
             image.set_color_at(pos.x, pos.y, c).unwrap();
