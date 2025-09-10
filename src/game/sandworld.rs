@@ -43,13 +43,13 @@ impl GridSize {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
-pub struct ElementPos{
+pub struct ElemPos{
     pub x: u32,
     pub y: u32
 }
-impl ElementPos {
+impl ElemPos {
     pub fn new(x: u32, y: u32) -> Self {
-        ElementPos{ x, y }
+        ElemPos{ x, y }
     }
     pub fn get_color(&self, image: &mut Image) -> Result<Color, TextureAccessError> {
         image.get_color_at(self.x, self.y)
@@ -70,7 +70,7 @@ impl ElementPos {
         else { false }
     }
     /*
-    pub fn get_inbound_coords_within_sq_radius(&self, radius: u32) -> Vec<ElementPos> {
+    pub fn get_inbound_coords_within_sq_radius(&self, radius: u32) -> Vec<ElemPos> {
         let adjustment = radius as i32 - 1;
 
         let mut neighbors = Vec::new();
@@ -84,7 +84,7 @@ impl ElementPos {
                 || (x == self.x as i32 && y == self.y as i32) {
                     continue
                 } else {
-                    neighbors.push(ElementPos::new(x as u32, y as u32))
+                    neighbors.push(ElemPos::new(x as u32, y as u32))
                 }
             }
         }
@@ -170,7 +170,7 @@ pub fn empty_grid_image_setup(
     commands.insert_resource(GridImage(handle));
 }
 
-pub struct PrevMousePos(pub Option<ElementPos>);
+pub struct PrevMousePos(pub Option<ElemPos>);
 impl Default for PrevMousePos {
     fn default() -> Self { PrevMousePos(None) }
 }
@@ -227,9 +227,9 @@ pub fn user_adds_element(
     previous_mouse_pos.0 = None
 }
 
-fn bresenham_line(x0: i32, y0: i32, x1: i32, y1: i32) -> Vec<ElementPos> {
+fn bresenham_line(x0: i32, y0: i32, x1: i32, y1: i32) -> Vec<ElemPos> {
     if x0 == x1 && y0 == y1 {
-        return vec![ElementPos::new(x0 as u32, y1 as u32)]
+        return vec![ElemPos::new(x0 as u32, y1 as u32)]
     }
 
     let mut points = Vec::new();
@@ -246,7 +246,7 @@ fn bresenham_line(x0: i32, y0: i32, x1: i32, y1: i32) -> Vec<ElementPos> {
 
     loop {
         if !(x == x0 && y == y0) { 
-            points.push(ElementPos::new(x as u32, y as u32));
+            points.push(ElemPos::new(x as u32, y as u32));
         }
 
         
@@ -290,7 +290,7 @@ fn world_to_grid(
     world_pos: Vec2,
     sprite_transform: &GlobalTransform,
     scale: f32,
-) -> Option<ElementPos>{
+) -> Option<ElemPos>{
     let sprite_center = sprite_transform.translation().truncate();
 
     let size = Vec2::new(GRID_SIZE.width as f32 * scale , GRID_SIZE.height as f32 * scale );
@@ -306,7 +306,7 @@ fn world_to_grid(
     && gy >= 0 
     && gx < GRID_SIZE.width as isize 
     && gy < GRID_SIZE.height as isize {
-        Some(ElementPos::new(gx as u32, GRID_SIZE.height - 1 - gy as u32 ))
+        Some(ElemPos::new(gx as u32, GRID_SIZE.height - 1 - gy as u32 ))
     } else {
         None
     }
@@ -321,7 +321,7 @@ pub fn main_checking_loop(
 
     for x in 0..GRID_SIZE.width {
         for y in (0..GRID_SIZE.height).rev() {
-            let pos = ElementPos::new(x, y);
+            let pos = ElemPos::new(x, y);
             let color = image.get_color_at(pos.x, pos.y).unwrap();
             let kind = ElementKind::from_color( color ).unwrap();
 
@@ -338,7 +338,7 @@ pub fn main_checking_loop(
 
 fn sand_algorithm(
     image: &mut Image,
-    pos: &ElementPos,
+    pos: &ElemPos,
     color: Color,
     dir: bool
 ) {
@@ -357,7 +357,7 @@ fn sand_algorithm(
 }
 
 
-fn unchecked_set_color_down(image: &mut Image, pos: &ElementPos, color: Color, permb_colors: &Vec<Color>) -> bool {
+fn unchecked_set_color_down(image: &mut Image, pos: &ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
     let c = image.get_color_at(pos.x, pos.y + 1).unwrap();
     if permb_colors.contains(&c) {
         image.set_color_at(pos.x, pos.y, c).unwrap();
@@ -367,7 +367,7 @@ fn unchecked_set_color_down(image: &mut Image, pos: &ElementPos, color: Color, p
     return false
 }
 
-fn set_color_leftdown(image: &mut Image, pos: &ElementPos, color: Color, permb_colors: &Vec<Color>) -> bool {
+fn set_color_leftdown(image: &mut Image, pos: &ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
     if pos.in_border_left() {
         let c = image.get_color_at(pos.x - 1, pos.y + 1).unwrap();
         if permb_colors.contains(&c) {
@@ -379,7 +379,7 @@ fn set_color_leftdown(image: &mut Image, pos: &ElementPos, color: Color, permb_c
     return false
 }
 
-fn set_color_rightdown(image: &mut Image, pos: &ElementPos, color: Color, permb_colors: &Vec<Color>) -> bool {
+fn set_color_rightdown(image: &mut Image, pos: &ElemPos, color: Color, permb_colors: &Vec<Color>) -> bool {
     if pos.in_border_right() {
         let c = image.get_color_at(pos.x + 1, pos.y + 1).unwrap();
         if permb_colors.contains(&c) {

@@ -39,11 +39,7 @@ impl Plugin for GamePlugin {
         
         .add_systems(OnExit(AppState::InGame),
             despawn_grid
-        )
-
-
-
-        ;
+        );
     }
 }
 
