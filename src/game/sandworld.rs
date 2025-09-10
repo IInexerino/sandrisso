@@ -52,13 +52,17 @@ impl ElementPos {
     pub fn set_color(&self, image: &mut Image, color: Color) -> Result<(), TextureAccessError> {
         image.set_color_at(self.x, self.y, color)
     }
-    pub fn in_bounds(&self, grid_size: &GridSize) -> bool {
-        if self.x < grid_size.width
-        || self.y < grid_size.height {
-            false
-        } else {
-            true
-        }
+    pub fn in_border_bottom(&self, grid_size: &GridSize) -> bool {
+        if self.y < grid_size.height - 1 { true }
+        else { false }
+    }
+    pub fn in_border_left(&self) -> bool {
+        if self.x > 0 { true }
+        else { false }
+    }
+    pub fn in_border_right(&self, grid_size: &GridSize) -> bool {
+        if self.x < grid_size.width - 1 { true }
+        else { false }
     }
     /*
     pub fn get_inbound_coords_within_sq_radius(&self, grid_size: &GridSize, radius: u32) -> Vec<ElementPos> {
@@ -309,6 +313,7 @@ pub fn main_checking_loop(
     handle: Res<GridImage>,
     mut images: ResMut<Assets<Image>>,
     grid: Single<&GridParams>,
+    mut dir: Local<bool>
 ) {
     let image = images.get_mut(&handle.0).expect("Image not found");
 
@@ -321,36 +326,66 @@ pub fn main_checking_loop(
             match kind {
                 ElementKind::Empty | ElementKind::Stone => continue,
                 ElementKind::Sand => {
-                    sand_algorithm(image, &pos, color, &grid.size);
+                    sand_algorithm(image, &pos, color, &grid.size, *dir);
                 },
             }
         }
     }
-
+    if *dir { *dir = false } else { *dir = true }
 }
 
 fn sand_algorithm(
     image: &mut Image,
     pos: &ElementPos,
     color: Color,
-    grid_size: &GridSize
+    grid_size: &GridSize,
+    dir: bool
 ) {
-    if pos.y < grid_size.height - 1 {
-        let permb_elem_color = ElementKind::Empty.to_color();
+    if pos.in_border_bottom(grid_size) {
+        let permb_colors = vec![ElementKind::Empty.to_color()];
 
-        if image.get_color_at(pos.x, pos.y + 1).unwrap() == permb_elem_color {
-            pos.set_color(image, permb_elem_color).unwrap();
-            image.set_color_at(pos.x, pos.y + 1 , color).unwrap();
-
-        } else if pos.x > 0 && image.get_color_at(pos.x - 1, pos.y + 1).unwrap() == permb_elem_color {
-            pos.set_color(image, permb_elem_color).unwrap();
-            image.set_color_at(pos.x - 1, pos.y + 1 , color).unwrap();
-
-        } else if pos.x < grid_size.width - 1 && image.get_color_at(pos.x + 1, pos.y + 1).unwrap() == permb_elem_color {
-            pos.set_color(image, permb_elem_color).unwrap();
-            image.set_color_at(pos.x + 1, pos.y + 1 , color).unwrap();
-
+        if unchecked_set_color_down(image, pos, color, &permb_colors) {}
+        else if dir {
+            if set_color_leftdown(image, pos, color, &permb_colors) {}
+            else if set_color_rightdown(image, pos, color, &permb_colors, grid_size) {}
+        } else {
+            if set_color_rightdown(image, pos, color, &permb_colors, grid_size) {}
+            else if set_color_leftdown(image, pos, color, &permb_colors) {}
         }
-
     }
+}
+
+
+fn unchecked_set_color_down(image: &mut Image, pos: &ElementPos, color: Color, permb_colors: &Vec<Color>) -> bool {
+    let c = image.get_color_at(pos.x, pos.y + 1).unwrap();
+    if permb_colors.contains(&c) {
+        image.set_color_at(pos.x, pos.y, c).unwrap();
+        image.set_color_at(pos.x, pos.y + 1 , color).unwrap();
+        return true
+    }
+    return false
+}
+
+fn set_color_leftdown(image: &mut Image, pos: &ElementPos, color: Color, permb_colors: &Vec<Color>) -> bool {
+    if pos.in_border_left() {
+        let c = image.get_color_at(pos.x - 1, pos.y + 1).unwrap();
+        if permb_colors.contains(&c) {
+            image.set_color_at(pos.x, pos.y, c).unwrap();
+            image.set_color_at(pos.x - 1, pos.y + 1 , color).unwrap();
+            return true
+        }
+    }
+    return false
+}
+
+fn set_color_rightdown(image: &mut Image, pos: &ElementPos, color: Color, permb_colors: &Vec<Color>, grid_size: &GridSize) -> bool {
+    if pos.in_border_right(grid_size) {
+        let c = image.get_color_at(pos.x + 1, pos.y + 1).unwrap();
+        if permb_colors.contains(&c) {
+            image.set_color_at(pos.x, pos.y, c).unwrap();
+            image.set_color_at(pos.x + 1, pos.y + 1 , color).unwrap();
+            return true
+        }
+    }
+    return false
 }
