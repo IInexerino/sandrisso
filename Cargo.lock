@@ -3717,6 +3717,7 @@ name = "sandfall-mimimi"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "lazy_static",
  "log",
  "rand 0.9.2",
 ]

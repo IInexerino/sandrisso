@@ -1,4 +1,6 @@
-use std::fmt::Display;
+use std::{fmt::Display};
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
 use bevy::{asset::{Assets, Handle, RenderAssetUsages}, color::{ Color, ColorToPacked}, ecs::{component::Component, query::With, resource::Resource, system::{Commands, Local, Res, ResMut, Single}}, image::Image, input::{mouse::MouseButton, ButtonInput}, log::info, math::{Vec2, Vec3}, render::{camera::Camera, render_resource::{Extent3d, TextureDimension, TextureFormat}}, sprite::Sprite, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window}};
 
 const GRID_SCALE: f32 = 5.;
@@ -116,14 +118,34 @@ pub enum ElemKind {
     Sand,
 }
 impl ElemKind {
-    fn to_color(&self) -> Color {
+    pub fn get_base_color(&self) -> Color {
         match self {
             ElemKind::Empty => EMPTY_COLOR,
             ElemKind::Sand => Color::srgba(0.86, 0.71, 0.46, 1.0),
             ElemKind::Stone => Color::srgba(0.52,0.52,0.52, 1.),
         }
     }
+    pub fn get_varied_color_from_position(&self, pos: ElemPos) -> Color {
+        match self {
+            ElemKind::Sand => {
+                let mut hasher = DefaultHasher::new();
+                pos.x.hash(&mut hasher);
+                pos.y.hash(&mut hasher);
+                let hash = hasher.finish();
+                
+                let variation = (hash % 64) as f32 / 64.0;
+                
+                let r = (0.86f32 + variation * 0.08 - 0.04).clamp(0.0, 1.0);
+                let g = (0.71f32 + variation * 0.06 - 0.03).clamp(0.0, 1.0);
+                let b = (0.46f32 + variation * 0.04 - 0.02).clamp(0.0, 1.0);
+                
+                Color::linear_rgb(r, g, b)
+            }
+            _ => self.get_base_color(),
+        }
+    }
 }
+
 impl Display for ElemKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -131,8 +153,6 @@ impl Display for ElemKind {
             ElemKind::Stone => write!(f, "[Stone]"),
             ElemKind::Sand => write!(f, "[Sand]"),
         }
-
-        
     }
 }
 
@@ -396,10 +416,11 @@ pub fn draw_image(
 
     for x in 0..GRID_SIZE.width {
         for y in 0..GRID_SIZE.height {
+            let elem_pos = ElemPos::new(x, y);
             let elem_color = grid_cells
-                .get_elem_at(ElemPos::new(x, y))
+                .get_elem_at(elem_pos)
                 .unwrap()
-                .to_color();
+                .get_varied_color_from_position(elem_pos);
             image.set_color_at(x, y, elem_color).unwrap();
         }
     }
