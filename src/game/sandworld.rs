@@ -1,9 +1,10 @@
 use std::fmt::Display;
-use bevy::{asset::{Assets, Handle, RenderAssetUsages}, color::{ palettes::css, Color, ColorToPacked}, ecs::{component::Component, query::With, resource::Resource, system::{Commands, Local, Res, ResMut, Single}}, image::{Image, TextureAccessError}, input::{mouse::MouseButton, ButtonInput}, log::info, math::{Vec2, Vec3}, render::{camera::Camera, render_resource::{Extent3d, TextureDimension, TextureFormat}}, sprite::Sprite, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window}};
+use bevy::{asset::{Assets, Handle, RenderAssetUsages}, color::{ Color, ColorToPacked}, ecs::{component::Component, query::With, resource::Resource, system::{Commands, Local, Res, ResMut, Single}}, image::{Image, TextureAccessError}, input::{mouse::MouseButton, ButtonInput}, log::info, math::{Vec2, Vec3}, render::{camera::Camera, render_resource::{Extent3d, TextureDimension, TextureFormat}}, sprite::Sprite, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window}};
 
 const GRID_SCALE: f32 = 12.;
 const GRID_WIDTH: u32 = 64;
 const GRID_HEIGHT: u32 = 64;
+const EMPTY_COLOR: Color = Color::srgba(0., 0., 0., 0.);
 
 
 #[derive(Resource)]
@@ -21,7 +22,7 @@ impl UserSelectedElements{
 }
 
 #[derive(Component)]
-pub struct Grid {
+pub struct GridParams {
     pub size: GridSize,
     pub scale: f32,
 }
@@ -95,7 +96,7 @@ pub enum ElementKind {
 // - 0.00019606 
 impl ElementKind {
     fn from_color(color: Color) -> Option<Self> {
-        if color == Color::srgba(0., 0., 0., 0.) { Some(ElementKind::Empty) }
+        if color == EMPTY_COLOR { Some(ElementKind::Empty) }
         else if color == Color::srgba(0.85882354, 0.70980394, 0.45882353, 1.0) { Some(ElementKind::Sand) }
         else if color == Color::srgba(0.5176471,0.5176471,0.5176471, 1.) { Some(ElementKind::Stone) }
         else { None }
@@ -103,7 +104,7 @@ impl ElementKind {
     }
     fn to_color(&self) -> Color {
         match self {
-            ElementKind::Empty => Color::srgba(0., 0., 0., 0.),
+            ElementKind::Empty => EMPTY_COLOR,
             ElementKind::Sand => Color::srgba(0.86, 0.71, 0.46, 1.0),
             ElementKind::Stone => Color::srgba(0.52,0.52,0.52, 1.),
         }
@@ -127,7 +128,7 @@ pub fn empty_grid_image_setup(
     mut images: ResMut<Assets<Image>>
 ) {
     
-    let grid = Grid {
+    let grid = GridParams {
         size: GridSize::new(GRID_WIDTH, GRID_HEIGHT),
         scale: GRID_SCALE,
     };
@@ -142,7 +143,7 @@ pub fn empty_grid_image_setup(
         },
         TextureDimension::D2,
         // Initialize it with a transparent black color
-        &(Color::srgba(0., 0., 0., 0.).to_srgba().to_u8_array()),
+        &(EMPTY_COLOR.to_srgba().to_u8_array()),
         // Use the same encoding as the color we set
         TextureFormat::Rgba8UnormSrgb,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
@@ -172,7 +173,7 @@ impl Default for PrevMousePos {
 pub fn user_adds_element(
     window: Single<&Window, With<PrimaryWindow>>,
     camera: Single<(&Camera, &GlobalTransform)>,
-    grid_q: Single<(&GlobalTransform, &Grid)>,
+    grid_q: Single<(&GlobalTransform, &GridParams)>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     selected_elems: Res<UserSelectedElements>,
     handle: Res<GridImage>,
@@ -307,7 +308,7 @@ fn world_to_grid(
 pub fn main_checking_loop(
     handle: Res<GridImage>,
     mut images: ResMut<Assets<Image>>,
-    grid: Single<&Grid>,
+    grid: Single<&GridParams>,
 ) {
     let image = images.get_mut(&handle.0).expect("Image not found");
 

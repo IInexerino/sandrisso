@@ -1,5 +1,5 @@
-use bevy::{app::{FixedUpdate, Plugin, Startup, Update}, core_pipeline::core_2d::Camera2d, ecs::{entity::Entity, query::With, schedule::{IntoScheduleConfigs, SystemSet}, system::{Commands, Res, ResMut, Single}}, input::{keyboard::KeyCode, ButtonInput}, log::info, render::camera::{OrthographicProjection, Projection}, state::{condition::in_state, state::{OnEnter, OnExit}}, ui::UiScale};
-use crate::{game::sandworld::{empty_grid_image_setup, main_checking_loop, user_adds_element, ElementKind, Grid, UserSelectedElements}, utils::helper_utils::toggle_resolution, AppState};
+use bevy::{app::{FixedUpdate, Plugin, Startup, Update}, core_pipeline::core_2d::Camera2d, ecs::{entity::Entity, query::With, schedule::{IntoScheduleConfigs, SystemSet}, system::{Commands, Res, ResMut, Single}}, input::{keyboard::KeyCode, ButtonInput}, log::info, render::camera::{OrthographicProjection, Projection}, state::{condition::in_state, state::{NextState, OnEnter, OnExit}}, ui::UiScale};
+use crate::{game::sandworld::{empty_grid_image_setup, main_checking_loop, user_adds_element, ElementKind, GridParams, UserSelectedElements}, utils::helper_utils::toggle_resolution, AppState};
 
 pub struct GamePlugin;
 impl Plugin for GamePlugin {
@@ -9,8 +9,6 @@ impl Plugin for GamePlugin {
         .insert_resource(UserSelectedElements::single(ElementKind::Sand))
         .add_systems(Startup, spawn_camera)
         .add_systems(Update, toggle_resolution)
-
-
 
 
         .add_systems(OnEnter(AppState::InGame),
@@ -34,6 +32,7 @@ impl Plugin for GamePlugin {
                     user_adds_element
                 )
                     .in_set(ElementSystem::UserElementGeneration),
+                back_to_main_menu.run_if(in_state(AppState::InGame))
             )
         )
 
@@ -97,6 +96,12 @@ fn user_selects_element(
     }
 }
 
-fn despawn_grid( mut commands: Commands, grid_e: Single<Entity, With<Grid>> ) {
+fn back_to_main_menu(keys: Res<ButtonInput<KeyCode>>, mut app_s: ResMut<NextState<AppState>>) {
+    if keys.just_pressed(KeyCode::Escape) {
+        app_s.set(AppState::MainMenu)
+    }
+}
+
+fn despawn_grid( mut commands: Commands, grid_e: Single<Entity, With<GridParams>> ) {
     commands.entity(grid_e.into_inner()).despawn();
 }
