@@ -11,11 +11,11 @@ pub struct GridImage(pub Handle<Image>);
 
 #[derive(Resource)]
 pub struct UserSelectedElements{
-    pub kind: ElementKind,
+    pub kind: ElemKind,
     pub radius: u32
 }
 impl UserSelectedElements{ 
-    pub fn single(kind: ElementKind) -> Self { 
+    pub fn single(kind: ElemKind) -> Self { 
         UserSelectedElements { kind , radius: 1 }
     }
 }
@@ -26,18 +26,18 @@ pub struct GridParams {
 }
 #[derive(Component)]
 pub struct GridCells {
-    pub cells: [ElementKind; GRID_SIZE.count()]
+    pub cells: [ElemKind; GRID_SIZE.count()]
 }
 impl GridCells {
     pub fn new_empty() -> Self {
-        GridCells { cells: [ ElementKind::Empty ; GRID_SIZE.count() ] }
+        GridCells { cells: [ ElemKind::Empty ; GRID_SIZE.count() ] }
     }
-    pub fn get_elem_at(&self, pos: ElemPos) -> Option<ElementKind> {
+    pub fn get_elem_at(&self, pos: ElemPos) -> Option<ElemKind> {
         if pos.in_bounds() {
             Some( self.cells[(pos.y * GRID_SIZE.width + pos.x) as usize] )
         } else { None }
     }
-    pub fn set_elem_at(&mut self, pos: ElemPos, kind: ElementKind) -> Option<()> {
+    pub fn set_elem_at(&mut self, pos: ElemPos, kind: ElemKind) -> Option<()> {
         if pos.in_bounds() {
             self.cells[(pos.y * GRID_SIZE.width + pos.x) as usize] = kind; 
 
@@ -110,26 +110,26 @@ impl ElemPos {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-pub enum ElementKind {
+pub enum ElemKind {
     Empty,
     Stone,
     Sand,
 }
-impl ElementKind {
+impl ElemKind {
     fn to_color(&self) -> Color {
         match self {
-            ElementKind::Empty => EMPTY_COLOR,
-            ElementKind::Sand => Color::srgba(0.86, 0.71, 0.46, 1.0),
-            ElementKind::Stone => Color::srgba(0.52,0.52,0.52, 1.),
+            ElemKind::Empty => EMPTY_COLOR,
+            ElemKind::Sand => Color::srgba(0.86, 0.71, 0.46, 1.0),
+            ElemKind::Stone => Color::srgba(0.52,0.52,0.52, 1.),
         }
     }
 }
-impl Display for ElementKind {
+impl Display for ElemKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ElementKind::Empty => write!(f, "[Empty]"),
-            ElementKind::Stone => write!(f, "[Stone]"),
-            ElementKind::Sand => write!(f, "[Sand]"),
+            ElemKind::Empty => write!(f, "[Empty]"),
+            ElemKind::Stone => write!(f, "[Stone]"),
+            ElemKind::Sand => write!(f, "[Sand]"),
         }
 
         
@@ -207,8 +207,8 @@ pub fn user_adds_element(
 
                 for sq_pos in all_click_squares {
 
-                    if grid_cells.get_elem_at(sq_pos).unwrap() == ElementKind::Empty 
-                    || selected_elems.kind == ElementKind::Empty {
+                    if grid_cells.get_elem_at(sq_pos).unwrap() == ElemKind::Empty 
+                    || selected_elems.kind == ElemKind::Empty {
                         grid_cells.set_elem_at(sq_pos, selected_elems.kind);
                     }
                 }
@@ -319,8 +319,8 @@ pub fn main_checking_loop(
             let kind = grid_cells.get_elem_at(pos).unwrap();
 
             match kind {
-                ElementKind::Empty | ElementKind::Stone => continue,
-                ElementKind::Sand => {
+                ElemKind::Empty | ElemKind::Stone => continue,
+                ElemKind::Sand => {
                     sand_algorithm(grid_cells, pos, *dir);
                 },
             }
@@ -335,8 +335,8 @@ fn sand_algorithm(
     dir: bool
 ) {
     if pos.in_border_bottom() {
-        let sand = ElementKind::Sand;
-        let permb_elems = vec![ElementKind::Empty];
+        let sand = ElemKind::Sand;
+        let permb_elems = vec![ElemKind::Empty];
 
         if unchecked_set_color_down(grid_cells, pos, sand, &permb_elems) {}
         else if dir {
@@ -350,7 +350,7 @@ fn sand_algorithm(
 }
 
 
-fn unchecked_set_color_down(grid_cells: &mut GridCells, pos: ElemPos, kind: ElementKind, permb_elems: &Vec<ElementKind>) -> bool {
+fn unchecked_set_color_down(grid_cells: &mut GridCells, pos: ElemPos, kind: ElemKind, permb_elems: &Vec<ElemKind>) -> bool {
     let down_pos = ElemPos::new(pos.x, pos.y + 1);
     let check_kind = grid_cells.get_elem_at(down_pos).unwrap();
     if permb_elems.contains(&check_kind) {
@@ -361,7 +361,7 @@ fn unchecked_set_color_down(grid_cells: &mut GridCells, pos: ElemPos, kind: Elem
     return false
 }
 
-fn set_color_leftdown(grid_cells: &mut GridCells, pos: ElemPos, kind: ElementKind, permb_elems: &Vec<ElementKind>) -> bool {
+fn set_color_leftdown(grid_cells: &mut GridCells, pos: ElemPos, kind: ElemKind, permb_elems: &Vec<ElemKind>) -> bool {
     if pos.in_border_left() {
         let leftdown_pos = ElemPos::new(pos.x - 1, pos.y + 1);
         let check_kind = grid_cells.get_elem_at(leftdown_pos).unwrap();
@@ -374,7 +374,7 @@ fn set_color_leftdown(grid_cells: &mut GridCells, pos: ElemPos, kind: ElementKin
     return false
 }
 
-fn set_color_rightdown(grid_cells: &mut GridCells, pos: ElemPos, kind: ElementKind, permb_elems: &Vec<ElementKind>) -> bool {
+fn set_color_rightdown(grid_cells: &mut GridCells, pos: ElemPos, kind: ElemKind, permb_elems: &Vec<ElemKind>) -> bool {
     if pos.in_border_right() {
         let rightdown_pos = ElemPos::new(pos.x + 1, pos.y + 1);
         let check_kind = grid_cells.get_elem_at(rightdown_pos).unwrap();
