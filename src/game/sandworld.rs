@@ -2,8 +2,7 @@ use std::fmt::Display;
 use bevy::{asset::{Assets, Handle, RenderAssetUsages}, color::{ Color, ColorToPacked}, ecs::{component::Component, query::With, resource::Resource, system::{Commands, Local, Res, ResMut, Single}}, image::{Image, TextureAccessError}, input::{mouse::MouseButton, ButtonInput}, log::info, math::{Vec2, Vec3}, render::{camera::Camera, render_resource::{Extent3d, TextureDimension, TextureFormat}}, sprite::Sprite, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window}};
 
 const GRID_SCALE: f32 = 5.;
-const GRID_WIDTH: u32 = 256;
-const GRID_HEIGHT: u32 = 192;
+const GRID_SIZE: GridSize = GridSize::new(256, 192);
 const EMPTY_COLOR: Color = Color::srgba(0., 0., 0., 0.);
 
 
@@ -26,14 +25,21 @@ pub struct GridParams {
     pub size: GridSize,
     pub scale: f32,
 }
+#[derive(Component)]
+pub struct GridCells {
+    pub cells: [ElementKind; GRID_SIZE.count()]
+}
 
 pub struct GridSize{
     width: u32,
     height: u32,
 }
 impl GridSize {
-    fn new(width: u32, height: u32) -> Self {
+    const fn new(width: u32, height: u32) -> Self {
         GridSize { width, height }
+    }
+    const fn count(&self) -> usize {
+        (self.width * self.height) as usize
     }
 }
 
@@ -133,7 +139,7 @@ pub fn empty_grid_image_setup(
 ) {
     
     let grid = GridParams {
-        size: GridSize::new(GRID_WIDTH, GRID_HEIGHT),
+        size: GRID_SIZE,
         scale: GRID_SCALE,
     };
 
