@@ -38,23 +38,34 @@ pub struct GridParams {
 }
 #[derive(Component)]
 pub struct GridCells {
-    pub cells: [ElemKind; GRID_SIZE.count()]
+    pub cells: [Elem; GRID_SIZE.count()]
 }
 impl GridCells {
     pub fn new_empty() -> Self {
-        GridCells { cells: [ ElemKind::Empty ; GRID_SIZE.count() ] }
+        GridCells { cells: [ Elem::new(ElemKind::Empty, false) ; GRID_SIZE.count() ] }
     }
-    pub fn get_elem_at(&self, pos: ElemPos) -> Option<ElemKind> {
+    pub fn get_elem_at(&self, pos: ElemPos) -> Option<Elem> {
         if pos.in_bounds() {
             Some( self.cells[(pos.y * GRID_SIZE.width + pos.x) as usize] )
         } else { None }
     }
-    pub fn set_elem_at(&mut self, pos: ElemPos, kind: ElemKind) -> Option<()> {
+    pub fn set_elem_at(&mut self, pos: ElemPos, elem: Elem) -> Option<()> {
         if pos.in_bounds() {
-            self.cells[(pos.y * GRID_SIZE.width + pos.x) as usize] = kind; 
+            self.cells[(pos.y * GRID_SIZE.width + pos.x) as usize] = elem; 
 
             Some(())
         } else { None }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct Elem {
+    kind: ElemKind,
+    moved: bool
+}
+impl Elem {
+    pub fn new(kind: ElemKind, moved: bool) -> Self {
+        Elem { kind, moved }
     }
 }
 

@@ -15,7 +15,8 @@ pub fn draw_image(
             let elem_color = grid_cells
                 .get_elem_at(elem_pos)
                 .unwrap()
-                .get_varied_color_from_position(elem_pos);
+                .kind.get_varied_color_from_position(elem_pos);
+            
             image.set_color_at(x, y, elem_color).unwrap();
         }
     }

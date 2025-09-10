@@ -1,5 +1,5 @@
 use bevy::{ecs::{query::With, resource::Resource, system::{Local, Res, ResMut, Single}}, input::{keyboard::KeyCode, mouse::MouseButton, ButtonInput}, math::Vec2, render::camera::Camera, transform::components::GlobalTransform, window::{PrimaryWindow, Window}};
-use crate::game::sandworld::{ElemKind, ElemPos, GridCells, GridParams, GRID_SIZE};
+use crate::game::sandworld::{Elem, ElemKind, ElemPos, GridCells, GridParams, GRID_SIZE};
 
 #[derive(Resource)]
 pub struct UserSelectedElements{
@@ -72,9 +72,9 @@ pub fn user_adds_element(
 
                 for sq_pos in all_click_squares {
 
-                    if grid_cells.get_elem_at(sq_pos).unwrap() == ElemKind::Empty 
+                    if grid_cells.get_elem_at(sq_pos).unwrap().kind == ElemKind::Empty 
                     || selected_elems.kind == ElemKind::Empty {
-                        grid_cells.set_elem_at(sq_pos, selected_elems.kind);
+                        grid_cells.set_elem_at(sq_pos, Elem::new(selected_elems.kind, false,)).unwrap();
                     }
                 }
 
