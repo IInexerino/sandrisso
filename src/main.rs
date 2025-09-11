@@ -14,7 +14,7 @@ fn main() {
                 WindowPlugin{
                     primary_window: 
                         Some(Window{
-                            title: "Sandfall".into(),
+                            title: "Sandrissi".into(),
                             resolution: WindowResolution::new(960., 540. ),
                             ..Default::default()
                         }), 

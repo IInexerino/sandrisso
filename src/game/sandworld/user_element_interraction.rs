@@ -1,5 +1,5 @@
 use bevy::{ecs::{query::With, resource::Resource, system::{Local, Res, ResMut, Single}}, input::{keyboard::KeyCode, mouse::MouseButton, ButtonInput}, math::Vec2, render::camera::Camera, transform::components::GlobalTransform, window::{PrimaryWindow, Window}};
-use crate::game::sandworld::{Elem, ElemKind, ElemPos, GridCells, GridParams, GRID_SIZE};
+use crate::game::sandworld::{Elem, ElemKind, ElemPos, GridCells, GridParams, SandColor, GRID_SIZE};
 
 #[derive(Resource)]
 pub struct UserSelectedElements{
@@ -18,8 +18,11 @@ pub fn user_selects_element(
 ) {
     let toggled_elem_kind = if keys.just_pressed(KeyCode::KeyM) {
         match element_selection.kind {
-            ElemKind::Empty => Some(ElemKind::Sand),
-            ElemKind::Sand => Some(ElemKind::Stone),
+            ElemKind::Empty => Some(ElemKind::Sand(SandColor::Yellow)),
+            ElemKind::Sand(SandColor::Yellow) => Some(ElemKind::Sand(SandColor::Red)),
+            ElemKind::Sand(SandColor::Red) => Some(ElemKind::Sand(SandColor::Blue)),
+            ElemKind::Sand(SandColor::Blue) => Some(ElemKind::Sand(SandColor::Green)),
+            ElemKind::Sand(SandColor::Green) => Some(ElemKind::Stone),
             ElemKind::Stone => Some(ElemKind::Empty),
         }
     } else { None };

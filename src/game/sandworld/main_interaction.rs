@@ -17,8 +17,8 @@ pub fn main_interaction_loop(
             if !elem.moved {
                 match elem.kind {
                     ElemKind::Empty | ElemKind::Stone => continue,
-                    ElemKind::Sand => {
-                        sand_algorithm(grid_cells, pos, *dir);
+                    ElemKind::Sand(color) => {
+                        sand_algorithm(grid_cells, pos, *dir, elem.kind);
                     },
                 }
             } else {
@@ -33,9 +33,9 @@ fn sand_algorithm(
     grid_cells: &mut GridCells,
     pos: ElemPos,
     dir: bool,
+    sand: ElemKind
 ) {
     if pos.in_border_bottom() {
-        let sand = ElemKind::Sand;
         let permb_elems = vec![ElemKind::Empty];
 
         if unchecked_set_color_down(grid_cells, pos, sand, &permb_elems) { return }

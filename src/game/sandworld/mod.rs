@@ -73,19 +73,26 @@ impl Elem {
 pub enum ElemKind {
     Empty,
     Stone,
-    Sand,
+    Sand(SandColor),
 }
 impl ElemKind {
     pub fn get_base_color(&self) -> Color {
         match self {
             ElemKind::Empty => EMPTY_COLOR,
-            ElemKind::Sand => Color::srgba(0.86, 0.71, 0.46, 1.0),
+            ElemKind::Sand(sand_color) => { 
+                match sand_color {
+                    SandColor::Yellow => { Color::srgba(0.86, 0.71, 0.46, 1.0) },
+                    SandColor::Red => Color::srgba(0.85, 0.35, 0.35, 1.0),
+                    SandColor::Blue => Color::srgba(0.35, 0.55, 0.85, 1.0),
+                    SandColor::Green => Color::srgba(0.45, 0.75, 0.45, 1.0),
+                }
+            },
             ElemKind::Stone => Color::srgba(0.52,0.52,0.52, 1.),
         }
     }
     pub fn get_varied_color_from_position(&self, pos: ElemPos) -> Color {
         match self {
-            ElemKind::Sand => {
+            ElemKind::Sand(sand_color) => {
                 let mut hasher = DefaultHasher::new();
                 pos.x.hash(&mut hasher);
                 pos.y.hash(&mut hasher);
@@ -94,16 +101,48 @@ impl ElemKind {
                 let r_variation = ((hash >> 0) % 32) as f32 / 32.0;
                 let g_variation = ((hash >> 8) % 32) as f32 / 32.0;
                 let b_variation = ((hash >> 16) % 32) as f32 / 32.0;
-                
-                let r = (0.86f32 + r_variation * 0.20 - 0.10).clamp(0.6, 1.0);
-                let g = (0.71f32 + g_variation * 0.25 - 0.125).clamp(0.5, 0.9);
-                let b = (0.46f32 + b_variation * 0.30 - 0.15).clamp(0.3, 0.7);
-                
-                Color::linear_rgb(r, g, b)
+                match sand_color {
+                    SandColor::Yellow => {
+                        let r = (0.86f32 + r_variation * 0.20 - 0.10).clamp(0.6, 1.0);
+                        let g = (0.71f32 + g_variation * 0.25 - 0.125).clamp(0.5, 0.9);
+                        let b = (0.46f32 + b_variation * 0.30 - 0.15).clamp(0.3, 0.7);
+                        Color::linear_rgb(r, g, b)
+                    }
+                    SandColor::Red => {
+                        // Vibrant red with strong variation
+                        let r = (0.85f32 + r_variation * 0.25 - 0.125).clamp(0.6, 1.0);
+                        let g = (0.35f32 + g_variation * 0.20 - 0.10).clamp(0.2, 0.55);
+                        let b = (0.35f32 + b_variation * 0.15 - 0.075).clamp(0.2, 0.5);
+                        Color::linear_rgb(r, g, b)
+                    }
+                    SandColor::Blue => {
+                        // Rich blue with good variation
+                        let r = (0.35f32 + r_variation * 0.15 - 0.075).clamp(0.2, 0.5);
+                        let g = (0.55f32 + g_variation * 0.20 - 0.10).clamp(0.4, 0.75);
+                        let b = (0.85f32 + b_variation * 0.25 - 0.125).clamp(0.6, 1.0);
+                        Color::linear_rgb(r, g, b)
+                    }
+                    SandColor::Green => {
+                        // Lush green with strong variation
+                        let r = (0.45f32 + r_variation * 0.15 - 0.075).clamp(0.3, 0.6);
+                        let g = (0.75f32 + g_variation * 0.25 - 0.125).clamp(0.55, 0.95);
+                        let b = (0.45f32 + b_variation * 0.20 - 0.10).clamp(0.3, 0.65);
+                        Color::linear_rgb(r, g, b)
+                    }
+                }
             }
             _ => self.get_base_color(),
         }
     }
+}
+
+#[derive(Default, Clone, Copy, PartialEq)]
+pub enum SandColor {
+    #[default]
+    Yellow,
+    Red,
+    Blue,
+    Green
 }
 
 impl Display for ElemKind {
@@ -111,7 +150,14 @@ impl Display for ElemKind {
         match self {
             ElemKind::Empty => write!(f, "[Empty]"),
             ElemKind::Stone => write!(f, "[Stone]"),
-            ElemKind::Sand => write!(f, "[Sand]"),
+            ElemKind::Sand(sand_color) => {
+                match sand_color {
+                    SandColor::Yellow => write!(f, "[Sand(Yellow)]"),
+                    SandColor::Red => write!(f, "[Sand(Red)]"),
+                    SandColor::Blue => write!(f, "[Sand(Blue)]"),
+                    SandColor::Green => write!(f, "[Sand(Green)]"),
+                }
+            },
         }
     }
 }

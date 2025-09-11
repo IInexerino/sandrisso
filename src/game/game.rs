@@ -6,7 +6,7 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut bevy::app::App) {
 
         app
-        .insert_resource(UserSelectedElements::single(ElemKind::Sand))
+        .insert_resource(UserSelectedElements::single(ElemKind::Empty))
         .add_systems(Startup, spawn_camera)
         .add_systems(Update, toggle_resolution)
 
