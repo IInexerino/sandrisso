@@ -81,15 +81,16 @@ impl ElemKind {
             ElemKind::Empty => EMPTY_COLOR,
             ElemKind::Sand(sand_color) => { 
                 match sand_color {
-                    SandColor::Yellow => { Color::srgba(0.86, 0.71, 0.46, 1.0) },
-                    SandColor::Red => Color::srgba(0.85, 0.35, 0.35, 1.0),
-                    SandColor::Blue => Color::srgba(0.35, 0.55, 0.85, 1.0),
-                    SandColor::Green => Color::srgba(0.45, 0.75, 0.45, 1.0),
+                    SandColor::Yellow => Color::srgba(0.95, 0.82, 0.20, 1.0),    // Bright golden yellow
+                    SandColor::Red => Color::srgba(0.92, 0.25, 0.25, 1.0),       // Vibrant red
+                    SandColor::Blue => Color::srgba(0.20, 0.45, 0.95, 1.0),      // Deeper, more saturated blue
+                    SandColor::Green => Color::srgba(0.25, 0.85, 0.25, 1.0),     // Brighter, more vibrant green
                 }
             },
-            ElemKind::Stone => Color::srgba(0.52,0.52,0.52, 1.),
+            ElemKind::Stone => Color::srgba(0.45, 0.45, 0.45, 1.0),
         }
     }
+    
     pub fn get_varied_color_from_position(&self, pos: ElemPos) -> Color {
         match self {
             ElemKind::Sand(sand_color) => {
@@ -101,32 +102,32 @@ impl ElemKind {
                 let r_variation = ((hash >> 0) % 32) as f32 / 32.0;
                 let g_variation = ((hash >> 8) % 32) as f32 / 32.0;
                 let b_variation = ((hash >> 16) % 32) as f32 / 32.0;
+                
                 match sand_color {
                     SandColor::Yellow => {
-                        let r = (0.86f32 + r_variation * 0.20 - 0.10).clamp(0.6, 1.0);
-                        let g = (0.71f32 + g_variation * 0.25 - 0.125).clamp(0.5, 0.9);
-                        let b = (0.46f32 + b_variation * 0.30 - 0.15).clamp(0.3, 0.7);
+                        let r = (0.95f32 + r_variation * 0.15 - 0.075).clamp(0.8, 1.0);
+                        let g = (0.82f32 + g_variation * 0.20 - 0.10).clamp(0.7, 0.95);
+                        let b = (0.20f32 + b_variation * 0.25 - 0.125).clamp(0.1, 0.4);
                         Color::linear_rgb(r, g, b)
                     }
                     SandColor::Red => {
-                        // Vibrant red with strong variation
-                        let r = (0.85f32 + r_variation * 0.25 - 0.125).clamp(0.6, 1.0);
-                        let g = (0.35f32 + g_variation * 0.20 - 0.10).clamp(0.2, 0.55);
-                        let b = (0.35f32 + b_variation * 0.15 - 0.075).clamp(0.2, 0.5);
+                        let r = (0.92f32 + r_variation * 0.20 - 0.10).clamp(0.75, 1.0);
+                        let g = (0.25f32 + g_variation * 0.25 - 0.125).clamp(0.15, 0.45);
+                        let b = (0.25f32 + b_variation * 0.20 - 0.10).clamp(0.15, 0.4);
                         Color::linear_rgb(r, g, b)
                     }
                     SandColor::Blue => {
-                        // Rich blue with good variation
-                        let r = (0.35f32 + r_variation * 0.15 - 0.075).clamp(0.2, 0.5);
-                        let g = (0.55f32 + g_variation * 0.20 - 0.10).clamp(0.4, 0.75);
-                        let b = (0.85f32 + b_variation * 0.25 - 0.125).clamp(0.6, 1.0);
+                        // Deep blue with minimal green component
+                        let r = (0.20f32 + r_variation * 0.15 - 0.075).clamp(0.1, 0.3);
+                        let g = (0.45f32 + g_variation * 0.20 - 0.10).clamp(0.35, 0.6);
+                        let b = (0.95f32 + b_variation * 0.15 - 0.075).clamp(0.8, 1.0);
                         Color::linear_rgb(r, g, b)
                     }
                     SandColor::Green => {
-                        // Lush green with strong variation
-                        let r = (0.45f32 + r_variation * 0.15 - 0.075).clamp(0.3, 0.6);
-                        let g = (0.75f32 + g_variation * 0.25 - 0.125).clamp(0.55, 0.95);
-                        let b = (0.45f32 + b_variation * 0.20 - 0.10).clamp(0.3, 0.65);
+                        // Vibrant green with minimal blue component
+                        let r = (0.25f32 + r_variation * 0.15 - 0.075).clamp(0.15, 0.35);
+                        let g = (0.85f32 + g_variation * 0.15 - 0.075).clamp(0.75, 0.95);
+                        let b = (0.25f32 + b_variation * 0.15 - 0.075).clamp(0.15, 0.35);
                         Color::linear_rgb(r, g, b)
                     }
                 }
